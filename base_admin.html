@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Admin — AI Chatbot Builder{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span class="dot" style="background:#3c7dff;box-shadow:0 0 14px rgba(60,125,255,0.5);"></span> Admin Panel</div>
+
+    <a class="nav-link {{ 'active' if active=='dashboard' }}" href="{{ url_for('admin.dashboard') }}"><span class="icon">📊</span> Dashboard</a>
+    <a class="nav-link {{ 'active' if active=='users' }}" href="{{ url_for('admin.users') }}"><span class="icon">👥</span> Users</a>
+    <a class="nav-link {{ 'active' if active=='bots' }}" href="{{ url_for('admin.bots') }}"><span class="icon">🤖</span> Bots</a>
+    <a class="nav-link {{ 'active' if active=='ai_models' }}" href="{{ url_for('admin.ai_models') }}"><span class="icon">🧠</span> AI Models</a>
+    <a class="nav-link {{ 'active' if active=='api_management' }}" href="{{ url_for('admin.api_management') }}"><span class="icon">🔑</span> API Management</a>
+    <a class="nav-link {{ 'active' if active=='integrations' }}" href="{{ url_for('admin.integrations') }}"><span class="icon">🔌</span> Integrations</a>
+    <a class="nav-link {{ 'active' if active=='templates' }}" href="{{ url_for('admin.templates') }}"><span class="icon">🧩</span> Templates</a>
+    <a class="nav-link {{ 'active' if active=='analytics' }}" href="{{ url_for('admin.analytics') }}"><span class="icon">📈</span> Analytics</a>
+    <a class="nav-link {{ 'active' if active=='conversations' }}" href="{{ url_for('admin.conversations') }}"><span class="icon">💬</span> Conversations</a>
+    <a class="nav-link {{ 'active' if active=='logs' }}" href="{{ url_for('admin.logs') }}"><span class="icon">🧾</span> System Logs</a>
+    <a class="nav-link {{ 'active' if active=='settings' }}" href="{{ url_for('admin.settings') }}"><span class="icon">⚙️</span> Settings</a>
+    <a class="nav-link" href="{{ url_for('auth.logout') }}"><span class="icon">🚪</span> Logout</a>
+  </aside>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>

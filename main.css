@@ -1,0 +1,1359 @@
+/* =========================================================================
+   AI CHATBOT BUILDER — Design System
+   Dark Blue / Lime / White · Glassmorphism · Neon glow · 3D depth
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-deep: #060a17;
+  --bg-panel: #0c1228;
+  --bg-panel-2: #101838;
+  --glass: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --lime: #b6ff3c;
+  --lime-glow: rgba(182, 255, 60, 0.45);
+  --blue: #3c7dff;
+  --white: #f5f7ff;
+  --muted: #8a93b8;
+  --danger: #ff5c72;
+  --warning: #ffb84c;
+  --success: #3cffb0;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow-soft: 0 10px 40px rgba(0,0,0,0.35);
+  --font-head: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+/* ---------------- Reduced motion support ----------------
+   When the user has requested reduced motion at the OS/browser level,
+   strip decorative animations/transitions down to near-instant so the UI
+   stays fully usable without motion. Functional state changes (e.g. modal
+   showing/hiding) still work — only the *decorative* movement is removed. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .mascot-3d svg, .orb1, .orb2, #ai-guide-fab, .card.tilt:hover, [data-tilt] {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(160deg, #0a0d14 0%, #060810 55%, #020408 100%);
+  color: var(--white);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Hide the scrollbar chrome everywhere while keeping the page fully
+   scrollable -- Firefox via `scrollbar-width`, Chromium/Safari via the
+   pseudo-element. Scroll functionality itself (wheel/touch/keyboard) is
+   completely untouched by these two rules. */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
+}
+
+h1, h2, h3, h4, .font-head { font-family: var(--font-head); }
+
+a { color: inherit; text-decoration: none; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(182,255,60,0.25); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------------- Layout ---------------- */
+.app-shell {
+  display: flex; min-height: 100vh;
+}
+
+/* ---------------- Full-page navigation transition ----------------
+   Bound by the click handler in common.js (initPageTransitions). A plain,
+   flat cross-fade + tiny vertical settle -- deliberately NOT a 3D
+   rotate/perspective effect on the whole page (that made the entire
+   dashboard feel tilted/unstable while scrolling). The body and
+   .app-shell itself stay perfectly flat at all times; only opacity and a
+   small translateY move. */
+.app-shell.page-entering {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.app-shell.page-exiting {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+.app-shell {
+  transition: transform .28s cubic-bezier(.16,1,.3,1), opacity .24s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell.page-entering, .app-shell.page-exiting { opacity: 1; transform: none; }
+  .app-shell { transition: none; }
+}
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, rgba(16,24,56,0.95), rgba(6,10,23,0.98));
+  border-right: 1px solid var(--glass-border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width .22s cubic-bezier(.2,.8,.2,1), padding .22s cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}
+
+.sidebar-logo {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 6px 22px 10px;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1.02rem;
+  position: relative;
+}
+.sidebar-logo .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 14px var(--lime-glow); flex-shrink: 0; }
+.sidebar-logo-text {
+  transition: opacity .18s ease; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; min-width: 0; flex: 1 1 auto;
+}
+
+/* ---------------- Collapsible sidebar ----------------
+   Toggled by a button that lives in the sidebar header, right next to
+   the logo/title; state lives on <html class="sidebar-collapsed"> (see
+   base_app.html's inline head script) so it applies before first paint
+   on every page load, and the main-content margin/sidebar width just
+   react to that one class -- no JS needed to resize anything else.
+   Icons stay visible in the collapsed "rail" state; labels/section
+   headers/logo text fade out. */
+.sidebar-toggle-btn {
+  margin-left: auto; flex-shrink: 0; z-index: 5;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-panel-2); border: 1px solid var(--glass-border);
+  color: var(--muted); cursor: pointer; font-size: 0.7rem;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s ease, margin .2s ease;
+}
+.sidebar-toggle-btn:hover { color: var(--lime); border-color: rgba(182,255,60,0.4); }
+.sidebar-toggle-icon { display: inline-block; transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+html.sidebar-collapsed .sidebar-toggle-icon { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-toggle-icon { transition: none; }
+}
+
+html.sidebar-collapsed .sidebar { width: 76px; padding-left: 10px; padding-right: 10px; }
+html.sidebar-collapsed .sidebar-logo { justify-content: center; padding-left: 0; padding-right: 0; }
+html.sidebar-collapsed .sidebar-logo .dot { display: none; }
+html.sidebar-collapsed .sidebar-toggle-btn { margin-left: 0; }
+html.sidebar-collapsed .sidebar-logo-text,
+html.sidebar-collapsed .nav-link-disabled span:not(.icon),
+html.sidebar-collapsed .nav-section-label {
+  display: none;
+}
+html.sidebar-collapsed .nav-link { justify-content: center; padding: 11px 0; }
+html.sidebar-collapsed .nav-link .icon { width: auto; }
+/* Nav link labels are plain text nodes (not wrapped in their own <span>),
+   so "display:none" can't target them individually -- instead, collapse
+   the link's own font-size to 0 (hiding its text nodes) and explicitly
+   restore the icon span's font-size so only the emoji remains visible. */
+html.sidebar-collapsed .nav-link { font-size: 0; }
+html.sidebar-collapsed .nav-link .icon { font-size: 1.05rem; }
+/* The sidebar's own hover tooltips (.tip) already render to the right in
+   the sidebar -- exactly what's needed to keep each icon identifiable
+   once its text label is hidden in the collapsed rail. */
+
+.nav-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+  cursor: pointer;
+  border: 1px solid transparent;
+  position: relative;
+}
+.nav-link:hover {
+  background: var(--glass);
+  color: var(--white);
+  border-color: rgba(182,255,60,0.3);
+  /* Clean, component-only lift -- vertical translation only, no 3D
+     rotation/translateZ/perspective involved. */
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3), 0 0 16px rgba(182,255,60,0.18);
+}
+.nav-link.active {
+  background: linear-gradient(90deg, rgba(182,255,60,0.16), rgba(182,255,60,0.02));
+  color: var(--lime);
+  border-color: rgba(182,255,60,0.25);
+  box-shadow: inset 0 0 20px rgba(182,255,60,0.08), 0 0 16px rgba(182,255,60,0.12);
+}
+.nav-link.active .icon { filter: drop-shadow(0 0 6px var(--lime-glow)); }
+.nav-link .icon { font-size: 1.05rem; width: 20px; text-align: center; display: inline-block; transition: transform .2s ease, filter .2s ease; }
+.nav-link:hover .icon { transform: scale(1.12); }
+@media (prefers-reduced-motion: reduce) {
+  .nav-link, .nav-link:hover, .nav-link .icon, .nav-link:hover .icon { transition: none; transform: none !important; animation: none !important; }
+}
+
+.nav-link-disabled {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  color: #3d4568;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: not-allowed;
+  border: 1px solid transparent;
+  opacity: 0.55;
+}
+.nav-section-label { color: #4b5480; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 10px 4px; }
+
+.main-content { flex: 1; min-width: 0; padding: 28px 32px 80px; }
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+
+  margin-bottom: 26px;
+}
+.topbar h1 { margin: 0; font-size: 1.5rem; font-weight: 700; }
+.topbar .subtitle { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+
+/* ---------------- Glass Cards ----------------
+   Component-only hover: a clean vertical lift (translateY only -- no
+   rotateX/rotateY/translateZ/perspective anywhere here), a brighter
+   glow-style shadow, and a crisp neon border highlight. Nothing on this
+   element (or any ancestor) tilts/rotates in 3D. */
+.card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.035), rgba(255,255,255,0.01));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 22px;
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-soft);
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, border-color .2s ease;
+  position: relative;
+}
+.card:hover, .card.tilt:hover {
+  border-color: rgba(182,255,60,0.45);
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.4), 0 0 22px rgba(182,255,60,0.16);
+}
+/* Fill-mode "backwards" (not "both"/"forwards"): keeps the 0% keyframe
+   applied during any stagger `animation-delay` (so cards don't flash at
+   full opacity before their turn to animate in), but -- unlike "forwards"
+   -- releases its hold on `transform`/`opacity` once the animation ends.
+   With "forwards" the finished keyframe effect keeps overriding
+   `transform` indefinitely (CSS animation effects beat a plain :hover
+   rule in the cascade), which was silently blocking the :hover
+   translateY(-5px) lift above after the entrance animation completed.
+   The 100% keyframe already equals the element's resting base style, so
+   releasing it after completion has no visible effect of its own. */
+.card.enter-anim { animation: card-enter .55s cubic-bezier(.16,1,.3,1) backwards; }
+@keyframes card-enter { from { opacity: 0; transform: translateY(16px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+/* Selectable template cards (e.g. create_bot.html "choose a starting
+   point" grid) -- explicit persistent active/selected state, independent
+   of :hover, so the choice stays visible after the mouse moves away. */
+.template-card { position: relative; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease, background .2s ease; }
+.template-card-check {
+  position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--lime); color: #04160a; font-size: 0.7rem; font-weight: 800;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 3px rgba(182,255,60,0.18);
+}
+.template-card.selected {
+  border-color: var(--lime);
+  background: rgba(182,255,60,0.06);
+  box-shadow: 0 0 0 2px rgba(182,255,60,0.35), 0 16px 32px rgba(0,0,0,0.35), 0 0 20px rgba(182,255,60,0.2);
+}
+.template-card.selected .template-card-check { display: flex; }
+
+/* ---------------- Cursor-tracked glow spotlight for [data-tilt] cards ----------------
+   initTiltEffect() (common.js) sets --mx/--my custom properties to the
+   cursor's position (as a % of the card's own box) on every mousemove;
+   this radial-gradient layer just follows those coordinates, producing a
+   glowing highlight that visibly tracks the mouse across the card. Purely
+   a background glow -- the card itself never rotates or tilts, it only
+   moves via the plain translateY(-5px) hover lift above. */
+[data-tilt] { position: relative; }
+[data-tilt]::before {
+  content: "";
+  position: absolute; inset: 0; border-radius: inherit; z-index: 0;
+  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), rgba(182,255,60,0.14), transparent 62%);
+  opacity: 0; transition: opacity .3s ease;
+  pointer-events: none;
+}
+[data-tilt]:hover::before { opacity: 1; }
+[data-tilt] > * { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) {
+  [data-tilt]::before { display: none; }
+}
+
+.recent-row {
+  /* "backwards" not "forwards"/"both" -- see .card.enter-anim comment
+     above; "both" would permanently pin `transform` after the entrance
+     animation finishes and silently block the :hover lift below. */
+  animation: row-enter .45s cubic-bezier(.16,1,.3,1) backwards;
+  transition: transform .2s ease, background .2s ease;
+  border-radius: 8px;
+}
+.recent-row:hover { transform: translateX(3px) translateY(-1px); background: rgba(255,255,255,0.025); }
+@keyframes row-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .recent-row, .recent-row:hover { animation: none; transition: none; transform: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card, .card.tilt:hover, .card:hover { transition: none; transform: none !important; }
+  .card.enter-anim { animation: none; }
+}
+
+.grid { display: grid; gap: 20px; }
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1100px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } .grid-3 { grid-template-columns: repeat(2,1fr);} }
+@media (max-width: 720px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+
+.stat-card { display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; }
+.stat-card .stat-label { color: var(--muted); font-size: 0.82rem; font-weight: 500; }
+.stat-card .stat-value { font-family: var(--font-head); font-size: 2rem; font-weight: 700; }
+.stat-card .stat-icon { position: absolute; right: 14px; top: 14px; font-size: 1.6rem; opacity: 0.5; }
+.stat-card .stat-trend { font-size: 0.78rem; color: var(--success); }
+
+/* ---------------- Buttons ----------------
+   Component-only hover: a clean vertical lift (translateY(-5px), no
+   rotation/translateZ/perspective) plus a glow shadow and crisper border. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, filter .15s ease;
+  font-family: var(--font-body);
+}
+/* Leading emoji on any button is auto-wrapped in .btn-icon by common.js
+   (wrapButtonIcons); it gets a small, flat scale bump on hover -- no 3D
+   rotation involved. */
+.btn-icon { display: inline-block; transition: transform .2s ease; }
+.btn:hover .btn-icon { transform: scale(1.15); }
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover .btn-icon { transform: none !important; }
+}
+/* shine sweep */
+.btn::before {
+  content: ""; position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-20deg); transition: left .55s ease; pointer-events: none; z-index: 1;
+}
+.btn:hover::before { left: 130%; }
+.btn:active, .btn.btn-pressed { transform: translateY(1px) scale(0.96); filter: brightness(0.96); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--lime), #9be82a); color: #04160a;
+  box-shadow: 0 4px 20px rgba(182,255,60,0.25), 0 1px 0 rgba(255,255,255,0.35) inset;
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 12px 28px rgba(182,255,60,0.45), 0 0 20px rgba(182,255,60,0.28), 0 1px 0 rgba(255,255,255,0.4) inset;
+  transform: translateY(-5px);
+}
+.btn-primary:active { box-shadow: 0 4px 14px rgba(182,255,60,0.35); transform: translateY(0) scale(0.98); }
+.btn-secondary { background: var(--glass); color: var(--white); border-color: var(--glass-border); }
+.btn-secondary:hover {
+  border-color: rgba(182,255,60,0.45); background: rgba(255,255,255,0.07);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.3), 0 0 18px rgba(182,255,60,0.16);
+}
+.btn-danger { background: rgba(255,92,114,0.14); color: var(--danger); border-color: rgba(255,92,114,0.35); }
+.btn-danger:hover {
+  background: rgba(255,92,114,0.24); transform: translateY(-5px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.3), 0 0 18px rgba(255,92,114,0.24);
+}
+.btn-ghost { background: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--white); transform: translateY(-3px); }
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:hover, .btn-secondary:hover, .btn-danger:hover, .btn-ghost:hover { transform: none !important; }
+}
+.btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform:none; box-shadow:none; }
+.btn:disabled::before { display: none; }
+.btn-block { width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+  .btn, .btn-primary:hover, .btn-secondary:hover { transform: none !important; }
+  .btn::before { display: none; }
+}
+
+/* ---------------- Forms ---------------- */
+.field { margin-bottom: 16px; animation: fade-up .5s ease both; }
+.field label { display: block; margin-bottom: 7px; font-size: 0.85rem; font-weight: 500; color: var(--muted); transition: color .2s ease; }
+input, textarea, select {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.03);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.25) inset;
+  transition: border-color .2s ease, box-shadow .25s ease, transform .2s ease, background .2s ease;
+}
+input::placeholder, textarea::placeholder { color: #57608c; }
+input:focus, textarea:focus, select:focus {
+  border-color: var(--lime);
+  box-shadow: 0 0 0 3px rgba(182,255,60,0.14), 0 6px 18px rgba(182,255,60,0.08), 0 1px 2px rgba(0,0,0,0.25) inset;
+  background: rgba(255,255,255,0.045);
+  transform: translateY(-1px);
+}
+.field:focus-within label { color: var(--lime); }
+textarea { resize: vertical; min-height: 90px; }
+select { appearance: none; cursor: pointer; }
+
+/* Validation feedback */
+.field.field-valid input { border-color: rgba(60,255,176,0.55); box-shadow: 0 0 0 3px rgba(60,255,176,0.1); }
+.field.field-invalid input { border-color: rgba(255,92,114,0.6); box-shadow: 0 0 0 3px rgba(255,92,114,0.12); animation: field-shake .35s ease; }
+.field-hint { font-size: 0.74rem; margin-top: 6px; color: var(--muted); transition: color .2s ease; }
+.field.field-valid .field-hint { color: var(--success); }
+.field.field-invalid .field-hint { color: var(--danger); }
+@keyframes field-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .field.field-invalid input { animation: none; }
+}
+
+.range-row { display: flex; align-items: center; gap: 12px; }
+input[type=range] { accent-color: var(--lime); }
+
+.checkbox-row { display: flex; align-items: center; gap: 10px; }
+input[type=checkbox] { width: auto; accent-color: var(--lime); }
+
+/* ---------------- Badges / Pills ---------------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 0.74rem; font-weight: 600;
+}
+.badge-success { background: rgba(60,255,176,0.12); color: var(--success); }
+.badge-warning { background: rgba(255,184,76,0.12); color: var(--warning); }
+.badge-danger { background: rgba(255,92,114,0.12); color: var(--danger); }
+.badge-muted { background: rgba(255,255,255,0.06); color: var(--muted); }
+.badge-lime { background: rgba(182,255,60,0.14); color: var(--lime); }
+.badge-blue { background: rgba(60,125,255,0.14); color: #8db4ff; }
+
+.dot-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot-online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+.dot-offline { background: var(--danger); }
+.dot-idle { background: var(--warning); }
+
+/* ---------------- Tables ---------------- */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+thead th {
+  text-align: left; padding: 10px 14px; color: var(--muted); font-weight: 600;
+  border-bottom: 1px solid var(--glass-border); white-space: nowrap;
+}
+tbody td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+tbody tr { transition: background .15s ease; }
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+/* ---------------- Empty / Loading / Skeleton ---------------- */
+.empty-state { text-align: center; padding: 50px 20px; color: var(--muted); }
+.empty-state .emoji { font-size: 2.4rem; margin-bottom: 10px; }
+
+.skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 37%, rgba(255,255,255,0.04) 63%); background-size: 400% 100%; animation: skeleton-loading 1.4s ease infinite; border-radius: 8px; }
+@keyframes skeleton-loading { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
+.spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--lime); border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------------- Toasts ---------------- */
+#toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+.toast {
+  min-width: 280px; max-width: 360px; padding: 14px 16px; border-radius: 12px;
+  background: rgba(12,18,40,0.95); border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft); display: flex; align-items: flex-start; gap: 10px;
+  animation: toast-in .25s ease;
+  backdrop-filter: blur(10px);
+}
+@keyframes toast-in { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.toast.success { border-color: rgba(60,255,176,0.4); }
+.toast.error { border-color: rgba(255,92,114,0.4); }
+.toast.info { border-color: rgba(60,125,255,0.4); }
+.toast .toast-icon { font-size: 1.1rem; }
+.toast .toast-msg { font-size: 0.86rem; line-height: 1.4; }
+
+/* ---------------- Modal ---------------- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(3,5,14,0.72); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 9000;
+  animation: fade-in .15s ease;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.modal-box {
+  background: var(--bg-panel-2); border: 1px solid var(--glass-border); border-radius: var(--radius);
+  padding: 26px; max-width: 480px; width: 92%; box-shadow: var(--shadow-soft);
+  animation: modal-in .2s ease;
+}
+@keyframes modal-in { from { transform: translateY(10px) scale(0.98); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+.modal-box h3 { margin-top: 0; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+/* ---------------- Tooltip / Hover Popups ---------------- */
+.hint {
+  position: relative;
+  display: inline-flex;
+}
+.hint .hint-icon {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); color: var(--muted);
+  font-size: 0.68rem; display: inline-flex; align-items: center; justify-content: center;
+  cursor: help; border: 1px solid var(--glass-border);
+}
+.hint-popup {
+  position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%) translateY(6px);
+  width: 240px; background: rgba(10,15,32,0.98); border: 1px solid rgba(182,255,60,0.3);
+  border-radius: 12px; padding: 14px; font-size: 0.8rem; color: var(--white);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px rgba(182,255,60,0.1);
+  opacity: 0; visibility: hidden; transition: all .2s ease; z-index: 500; pointer-events: none;
+}
+.hint:hover .hint-popup { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+.hint-popup strong { color: var(--lime); display: block; margin-bottom: 6px; }
+.hint-popup .ask-ai-link { display: inline-block; margin-top: 8px; color: var(--lime); font-size: 0.76rem; font-weight: 600; cursor: pointer; }
+
+[data-tilt] { transition: transform .2s ease; will-change: transform; }
+
+/* ---------------- Subtle link hover (e.g. Forgot password) ---------------- */
+.link-subtle { position: relative; transition: color .2s ease, text-shadow .2s ease; }
+.link-subtle:hover { color: var(--lime); text-shadow: 0 0 10px var(--lime-glow); }
+
+/* ---------------- Contextual tooltip (buttons / nav items) ----------------
+   Usage: wrap or annotate an element with data-tip="Explanation text" and
+   add the `tip` class. Pure CSS, no JS required, respects reduced motion. */
+.tip { position: relative; }
+/* Glassmorphism info tooltip: frosted panel with a soft neon rim that
+   fades AND scales in (rather than just sliding/fading) so it reads as a
+   small floating preview card rather than a flat browser-style tooltip. */
+.tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%; top: 100%;
+  transform: translate(-50%, 4px) scale(0.85);
+  transform-origin: top center;
+  margin-top: 10px;
+  min-width: 170px; max-width: 250px;
+  background: linear-gradient(155deg, rgba(24,32,64,0.85), rgba(10,14,30,0.92));
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(182,255,60,0.3);
+  color: var(--white);
+  font-size: 0.76rem; line-height: 1.45; font-weight: 500;
+  padding: 10px 14px; border-radius: 12px;
+  box-shadow: 0 14px 34px rgba(0,0,0,0.5), 0 0 22px rgba(182,255,60,0.16), inset 0 1px 0 rgba(255,255,255,0.06);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .22s cubic-bezier(.16,1,.3,1), transform .22s cubic-bezier(.16,1,.3,1), visibility .22s;
+  z-index: 3000; text-align: center; white-space: normal;
+}
+.tip:hover::after, .tip:focus-visible::after {
+  opacity: 1; visibility: visible; transform: translate(-50%, 0) scale(1);
+  transition-delay: .35s;
+}
+/* Sidebar nav tips render to the right instead of below */
+.sidebar .tip::after {
+  left: 100%; top: 50%; transform: translate(4px, -50%) scale(0.85);
+  transform-origin: center left;
+  margin-top: 0; margin-left: 12px;
+}
+.sidebar .tip:hover::after { transform: translate(0, -50%) scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  .tip::after { transition: opacity .05s linear; transform: translate(-50%, 0) scale(1) !important; }
+  .sidebar .tip::after { transform: translate(0, -50%) scale(1) !important; }
+  .tip:hover::after { transition-delay: 0s; }
+}
+@media (max-width: 720px) {
+  .tip::after { display: none; } /* avoid awkward overflow/positioning on small touch screens */
+}
+
+/* ---------------- Count-up stat animation helper ---------------- */
+.stat-value { transition: opacity .3s ease; }
+
+/* ---------------- Floating AI Guide ---------------- */
+#ai-guide-fab {
+  position: fixed; bottom: 26px; right: 26px; z-index: 8000;
+  width: 62px; height: 62px; border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #d4ff8c, var(--lime));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.7rem; cursor: pointer;
+  box-shadow: 0 8px 30px rgba(182,255,60,0.45);
+  animation: float-bob 3s ease-in-out infinite;
+  border: none;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+}
+#ai-guide-fab::before {
+  content: ""; position: absolute; inset: -6px; border-radius: 50%;
+  border: 2px solid rgba(182,255,60,0.5); opacity: 0; animation: fab-pulse 2.6s ease-out infinite;
+  pointer-events: none;
+}
+#ai-guide-fab.has-hint::before { opacity: 1; }
+@keyframes float-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes fab-pulse { 0% { transform: scale(0.9); opacity: 0.7; } 100% { transform: scale(1.4); opacity: 0; } }
+#ai-guide-fab:hover { box-shadow: 0 10px 40px rgba(182,255,60,0.65); transform: scale(1.08); }
+#ai-guide-fab:active { transform: scale(0.95); }
+@media (prefers-reduced-motion: reduce) {
+  #ai-guide-fab { animation: none; }
+  #ai-guide-fab::before { animation: none; opacity: 0; }
+}
+
+#ai-guide-panel {
+  position: fixed; bottom: 100px; right: 26px; z-index: 8000;
+  width: 360px; max-height: 520px; display: flex; flex-direction: column; overflow: hidden;
+  background: rgba(9,13,28,0.97); border: 1px solid var(--glass-border);
+  border-radius: 18px; box-shadow: var(--shadow-soft); backdrop-filter: blur(16px);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: translateY(16px) scale(0.96);
+  transform-origin: bottom right;
+  transition: opacity .22s cubic-bezier(.2,.8,.2,1), transform .22s cubic-bezier(.2,.8,.2,1), visibility .22s;
+}
+#ai-guide-panel.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
+@media (prefers-reduced-motion: reduce) {
+  #ai-guide-panel { transition: opacity .1s linear; transform: none !important; }
+}
+.ai-guide-header { padding: 16px 18px; background: linear-gradient(135deg, rgba(182,255,60,0.14), transparent); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); }
+.ai-guide-messages { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.ai-guide-msg { padding: 10px 13px; border-radius: 12px; font-size: 0.85rem; line-height: 1.45; max-width: 88%; }
+.ai-guide-msg.bot { background: rgba(255,255,255,0.05); align-self: flex-start; border: 1px solid var(--glass-border); }
+.ai-guide-msg.user { background: rgba(182,255,60,0.16); align-self: flex-end; color: var(--lime); }
+.ai-guide-msg.ai-guide-typing { color: var(--muted); font-style: italic; }
+.ai-guide-badge {
+  display: inline-block; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 2px 8px; border-radius: 999px; margin-bottom: 6px;
+  background: rgba(182,255,60,0.16); color: var(--lime); border: 1px solid rgba(182,255,60,0.35);
+}
+.ai-guide-suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 10px; }
+.ai-guide-suggestions button {
+  font-size: 0.74rem; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.03); color: var(--muted); cursor: pointer;
+}
+.ai-guide-suggestions button:hover { border-color: var(--lime); color: var(--lime); }
+.ai-guide-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--glass-border); }
+.ai-guide-input input { flex: 1; }
+
+/* ---------------- AI Guide: PDF upload row (Autonomous Agent) ---------------- */
+.ai-guide-upload-row { display: flex; align-items: center; gap: 8px; padding: 0 16px 10px; }
+.ai-guide-upload-btn {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 600;
+  padding: 7px 12px; border-radius: 999px; border: 1px dashed var(--glass-border);
+  background: rgba(182,255,60,0.06); color: var(--lime); cursor: pointer;
+  transition: border-color .2s ease, background .2s ease;
+}
+.ai-guide-upload-btn:hover { border-color: var(--lime); background: rgba(182,255,60,0.12); }
+
+/* ---------------- AI Guide: deployment channel prompt ---------------- */
+.ai-guide-deploy-prompt { max-width: 100% !important; }
+.ai-guide-channels { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ai-guide-channel-btn {
+  font-size: 0.78rem; font-weight: 600; padding: 8px 12px; border-radius: 10px;
+  border: 1px solid var(--glass-border); background: rgba(255,255,255,0.04); color: var(--white);
+  cursor: pointer; transition: border-color .2s ease, transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease;
+}
+.ai-guide-channel-btn:hover {
+  border-color: var(--lime); color: var(--lime);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3), 0 0 12px rgba(182,255,60,0.16);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-guide-channel-btn:hover, .ai-guide-upload-btn:hover { transform: none; }
+}
+
+/* ---------------- Auth / Landing page ---------------- */
+body.landing-page {
+  overflow-x: hidden;
+  /* Hide scrollbar chrome on the landing page's own scroll container while
+     the page itself keeps scrolling normally (see .landing-scroll below). */
+  scrollbar-width: none;
+}
+body.landing-page::-webkit-scrollbar { display: none; }
+
+.auth-wrap {
+  min-height: 100vh; position: relative; overflow: hidden;
+  /* Deep futuristic dark gradient, scoped to the auth/landing page only. */
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 10%, rgba(182,255,60,0.10), transparent 60%),
+    radial-gradient(ellipse 900px 700px at 85% 90%, rgba(60,125,255,0.14), transparent 60%),
+    linear-gradient(160deg, #0a0d14 0%, #060810 55%, #020408 100%);
+}
+.auth-bg-orb {
+  position: fixed; border-radius: 50%; filter: blur(80px); opacity: 0.5; pointer-events: none; z-index: 0;
+}
+.orb1 { width: 480px; height: 480px; background: var(--lime); top: -120px; left: -120px; animation: orb-float 12s ease-in-out infinite; }
+.orb2 { width: 420px; height: 420px; background: var(--blue); bottom: -140px; right: -100px; animation: orb-float 15s ease-in-out infinite reverse; }
+/* Third, smaller ambient glow drifting through the middle of the stage for
+   extra depth on the landing/auth background -- kept subtle so it never
+   competes with the mascot or text for attention. */
+.orb3 {
+  width: 320px; height: 320px; background: radial-gradient(circle, rgba(182,255,60,0.5), rgba(60,125,255,0.35));
+  top: 40%; left: 50%; margin-left: -160px; opacity: 0.28;
+  animation: orb-float 19s ease-in-out infinite;
+}
+@keyframes orb-float { 0%,100% { transform: translate(0,0); } 50% { transform: translate(40px,30px); } }
+@media (prefers-reduced-motion: reduce) {
+  .orb1, .orb2, .orb3 { animation: none; }
+}
+
+.auth-stars {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+}
+/* Twinkling star field layered behind the drifting particles -- pure CSS,
+   static positions generated inline per star (see auth_shell.html), only
+   opacity/scale animate so it stays cheap even with many stars on screen. */
+.auth-star {
+  position: absolute; border-radius: 50%; background: #fff;
+  animation: star-twinkle ease-in-out infinite;
+}
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.8); }
+  50%      { opacity: 0.9;  transform: scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-star { display: none; }
+}
+
+.auth-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; max-width: 1100px; width: 100%; align-items: center; position: relative; z-index: 2; }
+@media (max-width: 900px) { .auth-grid { grid-template-columns: 1fr; } .auth-intro { display:none; } }
+
+.auth-intro h1 { font-size: 2.6rem; line-height: 1.15; margin-bottom: 16px; }
+.auth-intro .highlight { color: var(--lime); }
+.auth-intro p { color: var(--muted); font-size: 1.02rem; line-height: 1.6; margin-bottom: 26px; }
+.feature-chip-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 640px; }
+.feature-chip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(182,255,60,0.22);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  font-size: 0.82rem; margin: 0; color: var(--white);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, border-color .25s ease, background .25s ease;
+  will-change: transform;
+}
+.feature-chip:hover {
+  transform: translateY(-4px) scale(1.035);
+  border-color: rgba(182,255,60,0.6);
+  background: linear-gradient(135deg, rgba(182,255,60,0.14), rgba(60,125,255,0.08));
+  box-shadow: 0 10px 26px rgba(0,0,0,0.35), 0 0 18px rgba(182,255,60,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .feature-chip:hover { transform: none; }
+}
+
+.mascot-3d {
+  width: 100%; max-width: 320px; margin: 0 auto 20px; aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center; position: relative;
+  perspective: 800px;
+}
+/* Glassmorphic 3D "orb" housing behind the bot -- soft frosted disc with a
+   layered green/blue neon aura, gently levitating as a single unit together
+   with the SVG so the glow and the glass both move in sync. */
+.mascot-3d::before {
+  content: ""; position: absolute; inset: 6%; border-radius: 50%;
+  background: linear-gradient(155deg, rgba(182,255,60,0.10), rgba(60,125,255,0.08) 55%, rgba(255,255,255,0.03));
+  border: 1px solid rgba(182,255,60,0.22);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 0 40px rgba(182,255,60,0.25),
+    0 0 90px rgba(60,125,255,0.20),
+    inset 0 0 30px rgba(255,255,255,0.05);
+  animation: mascot-levitate 5s ease-in-out infinite, mascot-aura-pulse 3.2s ease-in-out infinite;
+}
+.mascot-3d::after {
+  content: ""; position: absolute; width: 60%; height: 18px; left: 50%; bottom: 4%;
+  transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(182,255,60,0.28), transparent 70%);
+  filter: blur(4px); animation: mascot-shadow 5s ease-in-out infinite;
+}
+.mascot-3d svg {
+  position: relative; z-index: 1;
+  filter: drop-shadow(0 20px 40px rgba(182,255,60,0.25)) drop-shadow(0 0 22px rgba(60,125,255,0.25));
+  animation: mascot-levitate 5s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+.mascot-3d svg .mascot-eye { animation: mascot-blink 4.6s ease-in-out infinite; transform-origin: center; }
+.mascot-3d svg .mascot-eye:nth-of-type(2) { animation-delay: .08s; }
+.mascot-3d svg .mascot-antenna-tip { animation: mascot-glow-pulse 2.4s ease-in-out infinite; transform-origin: center; }
+/* Gentle up/down levitation -- shared timing between the glass housing and
+   the SVG so they always move together as one floating object. */
+@keyframes mascot-levitate {
+  0%,100% { transform: translateY(0) rotate(0deg) rotateY(0deg); }
+  50%     { transform: translateY(-14px) rotate(-2deg) rotateY(4deg); }
+}
+@keyframes mascot-aura-pulse {
+  0%,100% { box-shadow: 0 0 40px rgba(182,255,60,0.22), 0 0 90px rgba(60,125,255,0.18), inset 0 0 30px rgba(255,255,255,0.05); }
+  50%     { box-shadow: 0 0 60px rgba(182,255,60,0.4), 0 0 130px rgba(60,125,255,0.32), inset 0 0 36px rgba(255,255,255,0.08); }
+}
+@keyframes mascot-shadow { 0%,100% { opacity: 0.6; width: 60%; } 50% { opacity: 0.3; width: 46%; } }
+@keyframes mascot-blink { 0%, 90%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.15); } }
+@keyframes mascot-glow-pulse {
+  0%,100% { filter: drop-shadow(0 0 3px rgba(182,255,60,0.6)); opacity: 1; }
+  50%     { filter: drop-shadow(0 0 10px rgba(182,255,60,1)); opacity: 0.85; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot-3d::before { animation: none; }
+}
+
+/* ---------------- Auth stage (welcome / login / signup 3D scenes) ---------------- */
+.auth-particles {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden;
+}
+.auth-particle {
+  position: absolute; border-radius: 50%; background: rgba(182,255,60,0.5);
+  box-shadow: 0 0 8px rgba(182,255,60,0.6);
+  animation: particle-drift linear infinite;
+}
+@keyframes particle-drift {
+  0%   { transform: translate3d(0,0,0); opacity: 0; }
+  10%  { opacity: 0.8; }
+  90%  { opacity: 0.5; }
+  100% { transform: translate3d(var(--drift-x, 20px), -420px, 0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-particle { display: none; }
+}
+
+/* ---------------- Sticky top navbar ----------------
+   Persistent across the whole landing page (hero + feature sections) and
+   above the login/signup overlay. Reuses .welcome-actions button styling
+   as-is (see further down) so the neon-glow CTA look never diverges. */
+.landing-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  padding: 14px clamp(16px, 4vw, 48px);
+  background: linear-gradient(180deg, rgba(6,8,16,0.72), rgba(6,8,16,0.28) 80%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: background .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+.landing-nav-inner {
+  max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+}
+.landing-brand {
+  display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;
+  font-family: var(--font-head); font-weight: 700; font-size: 1.05rem; color: var(--white);
+}
+.landing-brand-icon {
+  display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px;
+  background: linear-gradient(135deg, rgba(182,255,60,0.18), rgba(60,125,255,0.14));
+  border: 1px solid rgba(182,255,60,0.3); font-size: 1.05rem;
+}
+.landing-nav .nav-actions { margin-top: 0; }
+.landing-nav .nav-actions .btn { min-width: 0; padding: 9px 20px; font-size: 0.82rem; }
+@media (max-width: 520px) {
+  .landing-brand-text { display: none; }
+  .landing-nav .nav-actions .btn { padding: 8px 13px; font-size: 0.76rem; }
+}
+
+/* ---------------- Full-page 3D scroll presentation ----------------
+   Each `.landing-section` is a snap point occupying the full viewport.
+   `scroll-snap-type` gives the "slide" feel on wheel/trackpad/keyboard
+   scroll while remaining native, accessible scrolling (not JS-hijacked). */
+.landing-scroll {
+  position: relative; z-index: 2;
+  height: 100vh; overflow-y: auto; overflow-x: hidden;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+.landing-scroll::-webkit-scrollbar { display: none; }
+.landing-section {
+  scroll-snap-align: start; scroll-snap-stop: always;
+  min-height: 100vh; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  padding: clamp(88px, 12vh, 140px) 20px clamp(24px, 4vh, 48px);
+  box-sizing: border-box;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-scroll { scroll-snap-type: none; scroll-behavior: auto; }
+}
+
+.landing-hero { padding-top: clamp(72px, 10vh, 110px); }
+.scroll-cue {
+  position: absolute; bottom: clamp(14px, 3vh, 30px); left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: var(--muted); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  animation: scroll-cue-fade 2.6s ease-in-out infinite;
+}
+.scroll-cue-mouse { width: 22px; height: 34px; border: 2px solid rgba(182,255,60,0.4); border-radius: 12px; position: relative; }
+.scroll-cue-wheel {
+  position: absolute; top: 6px; left: 50%; width: 3px; height: 7px; margin-left: -1.5px; border-radius: 2px;
+  background: var(--lime); animation: scroll-cue-wheel 1.6s ease-in-out infinite;
+}
+@keyframes scroll-cue-fade { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes scroll-cue-wheel { 0% { transform: translateY(0); opacity: 1; } 70% { opacity: 0; } 100% { transform: translateY(12px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue, .scroll-cue-wheel { animation: none; }
+}
+
+/* Scroll-triggered 3D depth reveal: sections start slightly scaled down,
+   translated on Z and blurred, then snap into full focus once in view
+   (class toggled by an IntersectionObserver in auth_shell.html). */
+[data-reveal] {
+  opacity: 0; transform: translateY(60px) translateZ(-80px) scale(0.92); filter: blur(6px);
+  transition: opacity .8s cubic-bezier(.16,1,.3,1), transform .8s cubic-bezier(.16,1,.3,1), filter .8s ease;
+  will-change: transform, opacity, filter;
+}
+[data-reveal].revealed {
+  opacity: 1; transform: translateY(0) translateZ(0) scale(1); filter: blur(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] { opacity: 1; transform: none; filter: none; transition: none; }
+}
+
+.section-inner { position: relative; z-index: 2; max-width: 1180px; width: 100%; margin: 0 auto; text-align: center; }
+.section-eyebrow {
+  display: inline-block; margin: 0 0 10px; padding: 5px 16px; border-radius: 999px; font-size: 0.72rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--lime);
+  background: rgba(182,255,60,0.08); border: 1px solid rgba(182,255,60,0.3);
+}
+.section-heading { font-size: clamp(1.7rem, 2.4vw + 1rem, 2.6rem); margin: 0 0 14px; line-height: 1.18; }
+.section-sub { color: var(--muted); max-width: 640px; margin: 0 auto 44px; font-size: 1rem; line-height: 1.6; }
+
+/* Ambient neon glows behind each feature section -- reuses the same
+   lime/blue palette as the hero orbs for visual continuity. */
+.section-glow { position: absolute; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+.section-glow-a { width: 460px; height: 460px; background: rgba(182,255,60,0.14); top: -80px; left: -100px; }
+.section-glow-b { width: 420px; height: 420px; background: rgba(60,125,255,0.16); bottom: -100px; right: -80px; }
+
+/* ---- Section 2: 3D glassmorphic feature cards ---- */
+.feature-cards-3d {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; perspective: 1400px;
+}
+@media (max-width: 900px) { .feature-cards-3d { grid-template-columns: 1fr; } }
+.feature-card-3d {
+  background: linear-gradient(155deg, rgba(20,28,58,0.65), rgba(9,13,28,0.78));
+  border: 1px solid var(--glass-border); border-radius: 20px; padding: 32px 26px;
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  transform-style: preserve-3d; transition: box-shadow .3s ease, border-color .3s ease;
+  text-align: left; will-change: transform;
+}
+.feature-card-3d:hover { border-color: rgba(182,255,60,0.4); box-shadow: 0 26px 60px rgba(0,0,0,0.5), 0 0 34px rgba(182,255,60,0.16); }
+.feature-card-icon {
+  width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  border-radius: 14px; margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(182,255,60,0.16), rgba(60,125,255,0.12));
+  border: 1px solid rgba(182,255,60,0.25);
+}
+.feature-card-3d h3 { margin: 0 0 10px; font-size: 1.08rem; }
+.feature-card-3d p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.55; }
+
+/* ---- Section 3: animated 3D analytics preview widgets (illustrative,
+   not live data -- labelled "Preview" so it's never confused with a real
+   connected dashboard on this public landing page). ---- */
+.analytics-preview-3d {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; perspective: 1400px;
+}
+@media (max-width: 900px) { .analytics-preview-3d { grid-template-columns: 1fr; } }
+.analytics-widget {
+  background: linear-gradient(155deg, rgba(20,28,58,0.65), rgba(9,13,28,0.78));
+  border: 1px solid var(--glass-border); border-radius: 20px; padding: 26px 24px;
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+  text-align: left; transition: box-shadow .3s ease, border-color .3s ease; will-change: transform;
+  min-height: 210px; display: flex; flex-direction: column; justify-content: space-between;
+}
+.analytics-widget:hover { border-color: rgba(60,125,255,0.4); box-shadow: 0 26px 60px rgba(0,0,0,0.5), 0 0 34px rgba(60,125,255,0.18); }
+.widget-label { display: flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 600; margin-bottom: 18px; }
+.widget-badge {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: 999px;
+  background: rgba(255,184,76,0.14); border: 1px solid rgba(255,184,76,0.35); color: var(--warning); font-weight: 700;
+}
+.widget-bars { display: flex; align-items: flex-end; gap: 6px; height: 70px; margin-bottom: 12px; }
+.widget-bars span {
+  flex: 1; height: var(--h, 40%); border-radius: 4px 4px 0 0;
+  background: linear-gradient(180deg, var(--lime), rgba(60,125,255,0.6));
+  animation: bar-grow 1.4s cubic-bezier(.16,1,.3,1) both;
+  transform-origin: bottom;
+}
+@keyframes bar-grow { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+.widget-metric { color: var(--muted); font-size: 0.82rem; }
+.widget-metric strong { color: var(--white); font-size: 1.3rem; font-family: var(--font-head); }
+.widget-gauge { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.widget-gauge svg { width: 100%; max-width: 180px; }
+.gauge-fill { stroke-dasharray: 157; stroke-dashoffset: 55; animation: gauge-sweep 1.6s cubic-bezier(.16,1,.3,1) both; }
+@keyframes gauge-sweep { from { stroke-dashoffset: 157; } }
+.gauge-value { text-align: center; margin-top: -6px; }
+.gauge-value span { display: block; font-size: 0.72rem; }
+.widget-flow { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.flow-node-dot {
+  padding: 8px 14px; border-radius: 10px; font-size: 0.76rem; font-weight: 600;
+  background: rgba(182,255,60,0.1); border: 1px solid rgba(182,255,60,0.3); color: var(--lime);
+}
+.flow-line { width: 22px; height: 2px; background: linear-gradient(90deg, var(--lime), var(--blue)); flex-shrink: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .widget-bars span, .gauge-fill { animation: none; }
+  .widget-bars span { transform: scaleY(1); opacity: 1; }
+  .gauge-fill { stroke-dashoffset: 55; }
+}
+
+/* ---------------- Login/Signup modal overlay ----------------
+   The scene-based auth flow now renders as a centered overlay panel above
+   the scrollable landing page, triggered by the navbar's Log In / Create
+   Account buttons (and closable back to the hero). */
+.auth-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(16px, 4vh, 40px) 20px;
+  overflow-y: auto;
+  background: rgba(3,5,10,0.72);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity .35s ease, visibility .35s ease;
+}
+.auth-overlay.overlay-active { opacity: 1; visibility: visible; pointer-events: auto; }
+.auth-overlay-close {
+  position: fixed; top: 18px; right: 22px; z-index: 101;
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.06); color: var(--white); font-size: 1rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+.auth-overlay-close:hover { background: rgba(255,92,114,0.14); border-color: rgba(255,92,114,0.4); transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) {
+  .auth-overlay { transition: opacity .15s linear; }
+  .auth-overlay-close:hover { transform: none; }
+}
+
+.auth-stage {
+  position: relative; z-index: 2; width: 100%; max-width: 1100px;
+  min-height: min(480px, 78vh); display: flex; align-items: center; justify-content: center;
+  perspective: 1600px;
+  margin: auto 0; /* combined with .auth-wrap's flex + auto vertical margins, this
+                     centers the stage when it fits and lets the page scroll instead
+                     of clipping content when the viewport is short. */
+}
+.auth-scene {
+  position: relative; display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px;
+  align-items: center; width: 100%;
+  transition: opacity .5s cubic-bezier(.2,.8,.2,1), transform .55s cubic-bezier(.2,.8,.2,1), visibility .55s;
+  transform-style: preserve-3d;
+  opacity: 0; visibility: hidden; pointer-events: none; /* inert unless explicitly active */
+}
+/* Only the ACTIVE scene participates in layout -- the inactive ones fall
+   back to absolute positioning so they don't add extra height to the
+   document while off-stage, but the active one is allowed to grow/scroll
+   naturally with the page instead of being pinned to a fixed-height
+   absolute box (this is the root fix for content being clipped at the
+   bottom of standard 100% zoom laptop viewports, e.g. 1366x768). */
+.auth-scene:not(.scene-active) { position: absolute; inset: 0; }
+.auth-scene[hidden] { display: grid; } /* override native [hidden] so transitions can animate it out */
+.auth-scene.scene-out-left    { opacity: 0; visibility: hidden; transform: translateX(-60px) rotateY(18deg) scale(0.92); pointer-events: none; }
+.auth-scene.scene-out-right   { opacity: 0; visibility: hidden; transform: translateX(60px) rotateY(-18deg) scale(0.92); pointer-events: none; }
+.auth-scene.scene-out-center  { opacity: 0; visibility: hidden; transform: scale(0.9) translateY(10px); pointer-events: none; }
+.auth-scene.scene-active      { opacity: 1; visibility: visible; transform: translateX(0) rotateY(0) scale(1); pointer-events: auto; }
+@media (max-width: 900px) {
+  .auth-scene { grid-template-columns: 1fr; }
+  .auth-scene .auth-visual { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-scene { transition: opacity .15s linear; transform: none !important; }
+}
+
+/* Welcome scene: centered mascot + CTA buttons, no side-by-side split.
+   Uses a real vertical flex flow (not fixed heights) with `justify-content:
+   center` and clamp()-based fluid gaps so every element -- mascot, headline,
+   subtext, feature pills, buttons -- always fits within the viewport at
+   100% zoom and gracefully compresses its own spacing on shorter screens
+   before ever resorting to page scroll. */
+.auth-scene-welcome {
+  grid-template-columns: 1fr; justify-items: center; text-align: center;
+  min-height: 100%;
+}
+.auth-scene-welcome .auth-visual { display: flex; }
+.auth-scene-welcome .auth-visual {
+  width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(10px, 2.2vh, 22px);
+  padding-block: clamp(4px, 2vh, 20px);
+}
+.auth-scene-welcome .mascot-3d {
+  margin: 0;
+  max-width: clamp(140px, 22vh, 260px);
+}
+.auth-scene-welcome h1 {
+  margin: 0; line-height: 1.15; font-size: clamp(1.6rem, 3.4vw + 0.6rem, 2.75rem);
+  font-weight: 700;
+}
+/* Neon gradient text-fill for the welcome headline -- animated hue drift
+   between lime and blue so it reads as a living, futuristic light source
+   rather than a flat color. */
+.auth-scene-welcome h1 .neon-text {
+  background: linear-gradient(100deg, var(--lime) 0%, #eaffb0 25%, var(--blue) 55%, var(--lime) 85%);
+  background-size: 300% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 18px rgba(182,255,60,0.35)) drop-shadow(0 0 32px rgba(60,125,255,0.25));
+  animation: neon-text-drift 6s linear infinite;
+}
+@keyframes neon-text-drift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-scene-welcome h1 .neon-text { animation: none; }
+}
+.auth-scene-welcome > .auth-visual > p,
+.auth-scene-welcome .auth-visual p {
+  margin: 0; max-width: 560px; color: var(--muted);
+  font-size: clamp(0.9rem, 0.5vw + 0.8rem, 1.02rem); line-height: 1.55;
+}
+.welcome-actions { display: flex; gap: 16px; margin-top: 4px; flex-wrap: wrap; justify-content: center; }
+.welcome-actions .btn { min-width: 190px; }
+
+/* ---- Landing-page-only button upgrades (scoped to .welcome-actions so the
+   rest of the app's buttons are untouched) ---- */
+.welcome-actions .btn-primary {
+  background: linear-gradient(135deg, var(--lime), #8be823);
+  box-shadow: 0 0 22px rgba(182,255,60,0.5), 0 4px 20px rgba(182,255,60,0.3), 0 1px 0 rgba(255,255,255,0.35) inset;
+  animation: neon-cta-pulse 2.6s ease-in-out infinite;
+}
+.welcome-actions .btn-primary:hover {
+  animation-play-state: paused;
+  box-shadow: 0 0 40px rgba(182,255,60,0.85), 0 10px 30px rgba(182,255,60,0.45), 0 1px 0 rgba(255,255,255,0.4) inset;
+  transform: translateY(-3px) scale(1.03);
+}
+@keyframes neon-cta-pulse {
+  0%,100% { box-shadow: 0 0 18px rgba(182,255,60,0.45), 0 4px 20px rgba(182,255,60,0.25), 0 1px 0 rgba(255,255,255,0.35) inset; }
+  50%     { box-shadow: 0 0 32px rgba(182,255,60,0.8), 0 4px 26px rgba(182,255,60,0.4), 0 1px 0 rgba(255,255,255,0.4) inset; }
+}
+.welcome-actions .btn-secondary {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  color: var(--white);
+}
+.welcome-actions .btn-secondary:hover {
+  background: rgba(182,255,60,0.08);
+  border-color: rgba(182,255,60,0.5);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.3), 0 0 22px rgba(182,255,60,0.25);
+  transform: translateY(-3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .welcome-actions .btn-primary { animation: none; }
+  .welcome-actions .btn-primary:hover, .welcome-actions .btn-secondary:hover { transform: none; }
+}
+
+.auth-visual { display: flex; flex-direction: column; align-items: center; }
+.auth-panel-side { min-width: 0; }
+
+/* Loading / transition overlay shown briefly between scenes on real actions */
+.auth-transition-spinner {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  color: var(--muted); font-size: 0.86rem; padding: 6px 0;
+}
+.auth-transition-spinner .spinner-3d {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid rgba(182,255,60,0.2); border-top-color: var(--lime);
+  animation: spin .7s linear infinite;
+}
+
+.auth-card {
+  background: linear-gradient(155deg, rgba(20,28,58,0.72), rgba(9,13,28,0.82));
+  border: 1px solid var(--glass-border); border-radius: 22px;
+  padding: 36px 34px; backdrop-filter: blur(22px); saturate: 140%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  will-change: transform;
+  transition: box-shadow .35s ease;
+  animation: auth-card-enter .7s cubic-bezier(.16,1,.3,1) both;
+}
+/* NOTE: the subtle continuous float + mouse-tilt are both applied via a
+   single JS requestAnimationFrame loop (see auth_shell.html) that writes to
+   this element's inline `transform` style. Deliberately NOT using a CSS
+   keyframe animation on `transform` here, because a running CSS animation
+   on the same property fights with (and gets overridden every frame by)
+   any JS-driven transform, causing visible jitter. */
+.auth-card::before {
+  content: ""; position: absolute; inset: 0; border-radius: 22px; padding: 1px;
+  background: linear-gradient(135deg, rgba(182,255,60,0.35), rgba(60,125,255,0.15), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none; opacity: 0.8;
+}
+.auth-card:hover { box-shadow: 0 26px 70px rgba(0,0,0,0.5), 0 0 40px rgba(182,255,60,0.12); }
+@keyframes auth-card-enter {
+  from { opacity: 0; transform: translateY(28px) scale(0.96) rotateX(6deg); }
+  to   { opacity: 1; transform: translateY(0) scale(1) rotateX(0deg); }
+}
+@keyframes auth-card-float {
+  0%,100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  50%     { transform: translateY(-6px) rotateX(0.4deg) rotateY(-0.4deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-card { animation: none; }
+}
+.auth-card h2 { margin-top: 0; font-size: 1.5rem; animation: fade-up .6s ease .15s both; }
+.auth-card .switch-link { text-align: center; margin-top: 18px; color: var(--muted); font-size: 0.88rem; animation: fade-up .6s ease .3s both; }
+.auth-card .switch-link a {
+  color: var(--lime); font-weight: 600; position: relative; padding-bottom: 1px;
+  transition: color .2s ease, text-shadow .2s ease;
+}
+.auth-card .switch-link a::after {
+  content: ""; position: absolute; left: 0; right: 100%; bottom: -2px; height: 1px;
+  background: var(--lime); transition: right .25s ease;
+}
+.auth-card .switch-link a:hover { text-shadow: 0 0 12px var(--lime-glow); }
+.auth-card .switch-link a:hover::after { right: 0; }
+
+@keyframes fade-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--muted); font-size: 0.78rem; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--glass-border); }
+.google-btn { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.form-error { background: rgba(255,92,114,0.1); border: 1px solid rgba(255,92,114,0.3); color: #ff8b9c; padding: 10px 14px; border-radius: 10px; font-size: 0.84rem; margin-bottom: 16px; display: none; }
+.form-success { background: rgba(60,255,176,0.1); border: 1px solid rgba(60,255,176,0.3); color: var(--success); padding: 10px 14px; border-radius: 10px; font-size: 0.84rem; margin-bottom: 16px; display: none; }
+
+/* ---------------- Flow Builder ----------------
+   Layout: the palette sidebar is gone -- node tools now live in a
+   floating horizontal toolbar pinned to the TOP of the canvas area
+   (.node-toolbar), and the canvas itself takes the full remaining width
+   so flows are never cramped. The canvas viewport (.builder-canvas-wrap)
+   clips a much larger, pannable/zoomable "infinite" surface
+   (#canvas-transform-layer) via a CSS transform -- see builder.html's
+   inline script for the pan/zoom math. */
+.builder-shell { display: flex; height: calc(100vh - 40px); gap: 16px; }
+.builder-canvas-area { flex: 1; min-width: 0; position: relative; display: flex; }
+.builder-canvas-wrap {
+  flex: 1; position: relative; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--glass-border);
+  background: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px) 0 0/22px 22px, #0a0f22;
+  cursor: grab;
+}
+.builder-canvas-wrap.panning { cursor: grabbing; }
+#canvas-transform-layer { position: absolute; top: 0; left: 0; width: 6000px; height: 4000px; transform-origin: 0 0; }
+.builder-props { width: 300px; flex-shrink: 0; overflow-y: auto; }
+
+/* Top-positioned floating workflow-nodes toolbar */
+.node-toolbar {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%); z-index: 50;
+  display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 14px;
+  background: rgba(9,13,28,0.92); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.4);
+}
+.node-toolbar-group { position: relative; }
+.node-toolbar-trigger {
+  background: var(--glass); border: 1px solid var(--glass-border); color: var(--white);
+  padding: 9px 14px; border-radius: 10px; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: border-color .2s ease, color .2s ease, background .2s ease;
+  white-space: nowrap;
+}
+.node-toolbar-trigger:hover, .node-toolbar-group.open .node-toolbar-trigger {
+  border-color: var(--lime); color: var(--lime); background: rgba(182,255,60,0.08);
+}
+.node-toolbar-flyout {
+  position: absolute; top: calc(100% + 10px); left: 0; min-width: 190px;
+  background: rgba(9,13,28,0.97); border: 1px solid var(--glass-border); border-radius: 12px;
+  padding: 10px; box-shadow: 0 16px 40px rgba(0,0,0,0.45);
+  opacity: 0; visibility: hidden; transform: translateY(-6px) scale(0.97); transform-origin: top left;
+  transition: opacity .18s cubic-bezier(.2,.8,.2,1), transform .18s cubic-bezier(.2,.8,.2,1), visibility .18s;
+  pointer-events: none;
+}
+.node-toolbar-group.open .node-toolbar-flyout {
+  opacity: 1; visibility: visible; transform: translateY(0) scale(1); pointer-events: auto;
+}
+@media (prefers-reduced-motion: reduce) {
+  .node-toolbar-flyout { transition: opacity .05s linear; transform: none !important; }
+}
+.node-toolbar-hint {
+  width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 0.74rem; font-weight: 700; color: var(--muted); border: 1px solid var(--glass-border); cursor: help;
+  margin-left: 4px;
+}
+.palette-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px;
+  background: var(--glass); border: 1px solid var(--glass-border); margin-bottom: 6px; cursor: grab;
+  font-size: 0.83rem; transition: all .15s ease; white-space: nowrap;
+}
+.palette-item:last-child { margin-bottom: 0; }
+.palette-item:hover { border-color: var(--lime); transform: translateX(3px); box-shadow: 0 4px 14px rgba(0,0,0,0.3), 0 0 12px rgba(182,255,60,0.14); }
+.palette-item:active { cursor: grabbing; }
+.palette-item.dragging { opacity: 0.4; border-color: var(--lime); }
+.palette-group-label { font-size: 0.72rem; text-transform: uppercase; color: var(--muted); margin: 14px 0 8px; letter-spacing: 0.06em; }
+.builder-canvas-wrap.drop-target { border-color: var(--lime); box-shadow: inset 0 0 0 2px rgba(182,255,60,0.35), 0 0 24px rgba(182,255,60,0.12); }
+body.connecting-edge, body.connecting-edge .flow-node { cursor: crosshair !important; }
+body.connecting-edge .flow-node:hover { border-color: var(--lime); }
+
+/* Zoom / pan controls */
+.canvas-zoom-controls {
+  position: absolute; bottom: 18px; left: 18px; z-index: 50;
+  display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 12px;
+  background: rgba(9,13,28,0.92); border: 1px solid var(--glass-border);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 14px 34px rgba(0,0,0,0.4);
+}
+.zoom-btn {
+  width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--glass-border);
+  background: var(--glass); color: var(--white); font-size: 1rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .2s ease, color .2s ease;
+}
+.zoom-btn:hover { border-color: var(--lime); color: var(--lime); }
+.zoom-reset-btn { font-size: 0.85rem; }
+.zoom-level { font-size: 0.76rem; color: var(--muted); min-width: 40px; text-align: center; font-weight: 600; }
+
+.flow-node {
+  position: absolute; min-width: 170px; background: rgba(16,24,56,0.95); border: 1.5px solid var(--glass-border);
+  border-radius: 12px; padding: 10px 12px; cursor: move; user-select: none; box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+  font-size: 0.8rem;
+}
+.flow-node.selected { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(182,255,60,0.15), 0 6px 20px rgba(0,0,0,0.35); }
+.flow-node .node-title { font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.flow-node .node-body { color: var(--muted); font-size: 0.72rem; max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.flow-node .node-port { width: 10px; height: 10px; border-radius: 50%; background: var(--lime); position: absolute; cursor: crosshair; border: 2px solid #0a0f22; }
+.flow-node .port-in { left: -6px; top: 50%; transform: translateY(-50%); }
+.flow-node .port-out { right: -6px; top: 50%; transform: translateY(-50%); }
+
+/* ---------------- Chat Widget ---------------- */
+.chat-window { display: flex; flex-direction: column; height: 100vh; background: var(--bg-deep); }
+.chat-header { padding: 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--glass-border); background: linear-gradient(135deg, rgba(182,255,60,0.08), transparent); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.chat-bubble { max-width: 80%; padding: 11px 14px; border-radius: 14px; font-size: 0.87rem; line-height: 1.45; }
+.chat-bubble.bot { background: rgba(255,255,255,0.06); align-self: flex-start; border: 1px solid var(--glass-border); }
+.chat-bubble.user { background: linear-gradient(135deg, var(--lime), #9be82a); color: #04160a; align-self: flex-end; font-weight: 500; }
+.chat-input-row { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--glass-border); }
+.typing-dots span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); margin-right: 3px; animation: typing-bounce 1.2s infinite; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; } .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typing-bounce { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+/* misc utilities */
+.flex { display: flex; } .flex-col { flex-direction: column; } .items-center { align-items: center; }
+.justify-between { justify-content: space-between; } .gap-8 { gap: 8px; } .gap-12 { gap: 12px; } .gap-16 { gap: 16px; }
+.mt-8 { margin-top: 8px; } .mt-16 { margin-top: 16px; } .mt-24 { margin-top: 24px; } .mb-16 { margin-bottom: 16px; }
+.text-muted { color: var(--muted); } .text-sm { font-size: 0.85rem; } .text-xs { font-size: 0.76rem; }
+.w-full { width: 100%; } .relative { position: relative; } .pointer { cursor: pointer; }
+.section-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; font-family: var(--font-head); }
+.divider { height: 1px; background: var(--glass-border); margin: 20px 0; }
+.avatar-circle { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--lime), var(--blue)); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #04160a; }

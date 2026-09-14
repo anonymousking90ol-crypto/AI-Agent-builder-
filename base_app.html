@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI Chatbot Builder{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <script>
+    // Applied synchronously in <head>, before the sidebar markup paints,
+    // so a returning user who collapsed the sidebar never sees a flash
+    // of the full-width sidebar before it snaps shut.
+    if (localStorage.getItem("sidebar-collapsed") === "1") {
+      document.documentElement.classList.add("sidebar-collapsed");
+    }
+  </script>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="app-shell" id="app-shell">
+  <aside class="sidebar" id="main-sidebar">
+    <div class="sidebar-logo">
+      <span class="dot"></span> <span class="sidebar-logo-text">AI Chatbot Builder</span>
+      <button class="sidebar-toggle-btn tip" id="sidebar-toggle-btn" data-tip="Collapse/expand the sidebar" aria-label="Toggle sidebar" title="Toggle sidebar">
+        <span class="sidebar-toggle-icon">◀</span>
+      </button>
+    </div>
+
+    <a class="nav-link tip {{ 'active' if active=='dashboard' }}" href="{{ url_for('user.dashboard') }}"
+       data-tip="View your chatbot activity and statistics.">
+      <span class="icon">📊</span> Dashboard
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='my_bots' }}" href="{{ url_for('user.my_bots') }}"
+       data-tip="Manage all your chatbots.">
+      <span class="icon">🤖</span> My Bots
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='create_bot' }}" href="{{ url_for('user.create_bot') }}"
+       data-tip="Create a new chatbot from scratch.">
+      <span class="icon">➕</span> Create Bot
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='templates' }}" href="{{ url_for('user.templates') }}"
+       data-tip="Start quickly with a pre-built chatbot template.">
+      <span class="icon">🧩</span> Templates
+    </a>
+
+    <div class="nav-section-label">Current Bot{% if not bot %} <span class="text-xs text-muted" style="font-weight:400;">(select a bot)</span>{% endif %}</div>
+    {% if bot %}
+    <a class="nav-link tip {{ 'active' if active=='builder' }}" href="{{ url_for('user.builder', bot_id=bot.id) }}"
+       data-tip="Design your chatbot using visual drag-and-drop nodes.">
+      <span class="icon">🛠️</span> Bot Builder
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='knowledge_base' }}" href="{{ url_for('user.knowledge_base', bot_id=bot.id) }}"
+       data-tip="Upload documents and create a knowledge base for your bot.">
+      <span class="icon">📚</span> Knowledge Base
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='integrations' }}" href="{{ url_for('user.integrations', bot_id=bot.id) }}"
+       data-tip="Connect your chatbot to supported platforms and services.">
+      <span class="icon">🔌</span> Integrations
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='test_bot' }}" href="{{ url_for('user.test_bot', bot_id=bot.id) }}"
+       data-tip="Test your chatbot before publishing.">
+      <span class="icon">🧪</span> Test Bot
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='deployments' }}" href="{{ url_for('user.deployments', bot_id=bot.id) }}"
+       data-tip="Manage your published chatbot deployments.">
+      <span class="icon">🚀</span> Deployments
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='version_history' }}" href="{{ url_for('user.version_history', bot_id=bot.id) }}"
+       data-tip="Browse and restore previous versions of this bot.">
+      <span class="icon">🕓</span> Version History
+    </a>
+    {% else %}
+    <span class="nav-link nav-link-disabled" title="Open a bot from My Bots to access the Builder">
+      <span class="icon">🛠️</span> Bot Builder
+    </span>
+    <span class="nav-link nav-link-disabled" title="Open a bot from My Bots to access its Knowledge Base">
+      <span class="icon">📚</span> Knowledge Base
+    </span>
+    <span class="nav-link nav-link-disabled" title="Open a bot from My Bots to access its Integrations">
+      <span class="icon">🔌</span> Integrations
+    </span>
+    <span class="nav-link nav-link-disabled" title="Open a bot from My Bots to test it">
+      <span class="icon">🧪</span> Test Bot
+    </span>
+    <span class="nav-link nav-link-disabled" title="Open a bot from My Bots to manage its deployments">
+      <span class="icon">🚀</span> Deployments
+    </span>
+    <span class="nav-link nav-link-disabled" title="Open a bot from My Bots to view its Version History">
+      <span class="icon">🕓</span> Version History
+    </span>
+    {% endif %}
+
+    <div class="nav-section-label">Insights</div>
+    <a class="nav-link tip {{ 'active' if active=='analytics' }}" href="{{ url_for('user.analytics_overview') }}"
+       data-tip="View chatbot usage and conversation analytics.">
+      <span class="icon">📈</span> Analytics
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='conversations' }}" href="{{ url_for('user.conversations_overview') }}"
+       data-tip="Review conversations across all your bots.">
+      <span class="icon">💬</span> Conversations
+    </a>
+
+    <div class="nav-section-label">Account</div>
+    <a class="nav-link tip {{ 'active' if active=='ai_assistant' }}" href="{{ url_for('user.ai_assistant') }}"
+       data-tip="Get help and guidance from the built-in AI Guide.">
+      <span class="icon">🧠</span> AI Assistant
+    </a>
+    <a class="nav-link tip {{ 'active' if active=='settings' }}" href="{{ url_for('user.settings') }}"
+       data-tip="Manage your account and API configuration.">
+      <span class="icon">⚙️</span> Settings
+    </a>
+    <a class="nav-link tip" href="{{ url_for('auth.logout') }}" data-tip="Sign out of your account.">
+      <span class="icon">🚪</span> Logout
+    </a>
+  </aside>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/common.js') }}"></script>
+<script>
+// Collapsible main navigation sidebar -- persists across page loads (each
+// page is a full server-rendered navigation in this app, not an SPA) via
+// localStorage, applied immediately (before first paint of the sidebar)
+// to avoid a visible expanded->collapsed flash on load.
+(function () {
+  const KEY = "sidebar-collapsed";
+  const root = document.documentElement;
+  document.getElementById("sidebar-toggle-btn").addEventListener("click", () => {
+    const collapsed = root.classList.toggle(KEY);
+    localStorage.setItem(KEY, collapsed ? "1" : "0");
+  });
+})();
+</script>
+<script src="{{ url_for('static', filename='js/ai_guide.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
